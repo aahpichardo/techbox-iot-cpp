@@ -13,14 +13,25 @@ const byte relayFour = 33;
 #define WIFI_PASSWORD "3C046117AB02"
 
 void setup() {
-  //Conexión WIFI
-  
-
   //Inicia setup del scanner QR
   Serial.begin(9600);
   mySerial.begin(9600);
   Serial.println("Inicializando GM60...");
   //Fin setup QR
+
+  //Conexión WIFI
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to Wi-Fi");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.println();
+  //FIN conexion WIFI
 
   //Inicia setup de relés
   pinMode(relayOne, OUTPUT);
