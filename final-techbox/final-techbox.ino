@@ -1,5 +1,7 @@
 #include <SoftwareSerial.h> //Para el ESP32 se necesita la libreria EspSoftwareSerial by Dirk Kaar, Peter Lerup
 #include <WiFi.h>
+#include <FirebaseESP32.h>
+
 SoftwareSerial mySerial(16, 17); // TX (amarillo), RX (verde) //Necesario para el escaner QR
 
 //Pines de los relevadores
@@ -12,15 +14,35 @@ const byte relayFour = 33;
 #define WIFI_SSID "IZZI-AB02"
 #define WIFI_PASSWORD "3C046117AB02"
 
+//Configuración de Firebase
+/* Definir credenciales de Firebase */
+#define API_KEY "AIzaSyCTczQ8QXbdH0o0oRzz9ZMCLDvR1jOlGS0"
+#define DATABASE_URL "pruebas-f0910-default-rtdb.firebaseio.com"
+#define USER_EMAIL "techhboxinc@gmail.com"
+#define USER_PASSWORD "prueba123"
+
+/* Definir objeto de datos de Firebase */
+FirebaseData fbdo;
+
+/* Configurar autenticación y configuración de Firebase */
+FirebaseAuth auth;
+FirebaseConfig config;
+
+unsigned long sendDataPrevMillis = 0;
+
+unsigned long count = 0;
+
+//Fin configuración de firebase
+
 void setup() {
   //Inicia setup del scanner QR
-  Serial.begin(9600);
-  mySerial.begin(9600);
+  Serial.begin(115200);
+  mySerial.begin(115200);
   Serial.println("Inicializando GM60...");
   //Fin setup QR
 
   //Conexión WIFI
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -32,6 +54,18 @@ void setup() {
   Serial.println(WiFi.localIP());
   Serial.println();
   //FIN conexion WIFI
+
+  //Configuración Firebase
+  /* Configurar credenciales de Firebase */
+  config.api_key = API_KEY;
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
+  config.database_url = DATABASE_URL;
+  
+
+  /* Iniciar conexión con Firebase */
+  Firebase.begin(&config, &auth);
+  //Fin configuración firebase
 
   //Inicia setup de relés
   pinMode(relayOne, OUTPUT);
