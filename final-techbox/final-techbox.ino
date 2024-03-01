@@ -37,7 +37,7 @@ unsigned long count = 0;
 void setup() {
   //Inicia setup del scanner QR
   Serial.begin(115200);
-  mySerial.begin(115200);
+  mySerial.begin(9600);
   Serial.println("Inicializando GM60...");
   //Fin setup QR
 
@@ -81,52 +81,68 @@ bool qrReadRecently = false;
 String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR
 
 void loop() {
-  // Espera hasta que haya datos disponibles
-  if (mySerial.available() > 0) {
-    // Lee los datos hasta que se reciba un carácter de nueva línea
-    while (mySerial.available()) {
-      char input = mySerial.read();
-      Serial.print(input);
-      qrCode += input;  // Concatena los caracteres para formar el código QR
-      delay(5);
-    }
-    
-    Serial.println();
-    
-    // Verifica si el contenido del código QR no está vacío antes de activar el relé
-      if(!qrCode.isEmpty()){
-        if(qrCode == "Extension"){
+    if (mySerial.available() > 0) { //para saber si se esta escaneando algo
+      Serial.println("Puedes escanear");
+      // Lee los datos hasta que se reciba un carácter de nueva línea
+      while (mySerial.available()) { //para agregar lo que se escanea a una variable, ver si se puede optimizar
+        char input = mySerial.read();
+        Serial.print(input);
+        qrCode += input;  // Concatena los caracteres para formar el código QR
+        delay(5);
+      }
+
+      Serial.println();
+
+      //PRESTAMO
+      if(!qrCode.isEmpty() && qrCode.indexOf("Prestamo") != -1){
+        Serial.println("Se esta realizando un prestamo");
+        if(qrCode.indexOf("Extension") != -1){
+          Serial.println("Encendiendo relay uno");
           digitalWrite(relayOne, LOW);
           delay(3000);
           digitalWrite(relayOne, HIGH);
-      }else if( qrCode == "Ethernet"){
-        digitalWrite(relayTwo, LOW);
-        delay(3000);
-        digitalWrite(relayTwo, HIGH);
-        Serial.println("Encendiendo relay dos");
-      }else if(qrCode == "Adaptador"){
-        digitalWrite(relayThree, LOW);
-        delay(3000);
-        digitalWrite(relayThree, HIGH);
-        Serial.println("Encendiendo relay tres");
-      }else if(qrCode == "HDMI"){
-        digitalWrite(relayFour, LOW);
-        delay(3000);
-        digitalWrite(relayFour, HIGH);
-        Serial.println("Encendiendo relay cuatro");
-      }
-      // Limpia qrCode para la próxima lectura
-      qrCode = "";
-    }
-  } else {
-    // Si no hay datos disponibles, asegúrate de que el relé esté activado
-    digitalWrite(relayOne, HIGH);
-    digitalWrite(relayTwo, HIGH);
-    digitalWrite(relayThree, HIGH);
-    digitalWrite(relayFour, HIGH);
-  }
+        }else if(qrCode.indexOf("Ethernet") != -1){
+          Serial.println("Encendiendo relay dos");
+          digitalWrite(relayTwo, LOW);
+          delay(3000);
+          digitalWrite(relayTwo, HIGH);
+        }else if(qrCode.indexOf("Adaptador") != -1 ){
+          Serial.println("Encendiendo relay tres");
+          digitalWrite(relayThree, LOW);
+          delay(3000);
+          digitalWrite(relayThree, HIGH);
+        }else if(qrCode.indexOf("HDMI") != -1){
+          Serial.println("Encendiendo relay cuatro");
+          digitalWrite(relayFour, LOW);
+          delay(3000);
+          digitalWrite(relayFour, HIGH);
+        }
+          //DEVOLUCION
+      }else if(!qrCode.isEmpty() && qrCode.indexOf("Devolucion") != -1){
+        Serial.println("Se está realizando una devolución");
+        if(qrCode.indexOf("Extension") != -1){
+          Serial.println("Devolver Extension");
+        }else if(qrCode.indexOf("Ethernet") != -1){
+          Serial.println("Devolver Ethernet");
+        }else if(qrCode.indexOf("Adaptador") != -1){
+          Serial.println("Devolver adaptador");
+        }else if(qrCode.indexOf("HDMI") != -1){
+          Serial.println("Devolver HDMI");
+        }
 
-  // Tu código principal puede continuar aquí...
+      }else{
+        Serial.println("QR invalido");
+      }//end if saber si es prestamo o devolucion
+              
+      qrCode = "";
+    }else {
+      // Si no hay datos disponibles, asegúrate de que el relé esté activado (osease, desactivado)
+      digitalWrite(relayOne, HIGH);
+      digitalWrite(relayTwo, HIGH);
+      digitalWrite(relayThree, HIGH);
+      digitalWrite(relayFour, HIGH);
+    }//fin lectura qr
+
 }//fin loop
 
 
