@@ -78,7 +78,14 @@ void setup() {
 
 // Variable de estado para rastrear si se ha leído un código QR recientemente
 bool qrReadRecently = false;
-String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR
+
+//variables para el json
+String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR, debe tener formato como este: Tipo:Prestamo,Matricula:1121120162,Articulo:Extension, Cantidad:1,Fecha:02-03-24
+String qrMatricula = "";
+String qrArticulo = "";
+int qrCantidad = 0;
+String qrDate = "";
+//fin variables json
 
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
@@ -93,7 +100,7 @@ void loop() {
 
       Serial.println();
 
-      //PRESTAMO
+      /*//PRESTAMO
       if(!qrCode.isEmpty() && qrCode.indexOf("Prestamo") != -1){
         Serial.println("Se esta realizando un prestamo");
         if(qrCode.indexOf("Extension") != -1){
@@ -132,8 +139,10 @@ void loop() {
 
       }else{
         Serial.println("QR invalido");
-      }//end if saber si es prestamo o devolucion
-              
+      }//end if saber si es prestamo o devolucion*/
+      
+      processQRCode(qrCode);
+
       qrCode = "";
     }else {
       // Si no hay datos disponibles, asegúrate de que el relé esté activado (osease, desactivado)
@@ -145,8 +154,107 @@ void loop() {
 
 }//fin loop
 
+void processQRCode(String qrCode){
+  //PRESTAMO
+      if(!qrCode.isEmpty() && qrCode.indexOf("Prestamo") != -1){
+        Serial.println("Se esta realizando un prestamo");
+        if(qrCode.indexOf("Extension") != -1){
+          Serial.println("Encendiendo relay uno");
+          digitalWrite(relayOne, LOW);
+          delay(3000);
+          digitalWrite(relayOne, HIGH);
+        }else if(qrCode.indexOf("Ethernet") != -1){
+          Serial.println("Encendiendo relay dos");
+          digitalWrite(relayTwo, LOW);
+          delay(3000);
+          digitalWrite(relayTwo, HIGH);
+        }else if(qrCode.indexOf("Adaptador") != -1 ){
+          Serial.println("Encendiendo relay tres");
+          digitalWrite(relayThree, LOW);
+          delay(3000);
+          digitalWrite(relayThree, HIGH);
+        }else if(qrCode.indexOf("HDMI") != -1){
+          Serial.println("Encendiendo relay cuatro");
+          digitalWrite(relayFour, LOW);
+          delay(3000);
+          digitalWrite(relayFour, HIGH);
+        }
+        sendDataToFirebase(qrCode);
+          //DEVOLUCION
+      }else if(!qrCode.isEmpty() && qrCode.indexOf("Devolucion") != -1){
+        Serial.println("Se está realizando una devolución");
+        if(qrCode.indexOf("Extension") != -1){
+          Serial.println("Devolver Extension");
+        }else if(qrCode.indexOf("Ethernet") != -1){
+          Serial.println("Devolver Ethernet");
+        }else if(qrCode.indexOf("Adaptador") != -1){
+          Serial.println("Devolver adaptador");
+        }else if(qrCode.indexOf("HDMI") != -1){
+          Serial.println("Devolver HDMI");
+        }
 
+      }else{
+        Serial.println("QR invalido");
+      }
+}
 
+//Funcion para enviar los datos a firebase
+void sendDataToFirebase(String qrCode){
+    // Firebase.ready() should be called repeatedly to handle authentication tasks.
+  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
+  {
+    sendDataPrevMillis = millis();
+
+    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Edit_Parse.ino
+    FirebaseJson json;
+
+    //extraccion del qr a la matricula
+    qrMatricula = extractValue(qrCode, "Matricula");
+    qrArticulo = extractValue(qrCode, "Articulo");
+    qrCantidad = extractValue(qrCode, "Cantidad").toInt();
+    qrDate = extractValue(qrCode, "Fecha");
+
+    // Agrega los datos al objeto JSON
+    json.add("userRegistration", qrMatricula);
+    json.add("amount", qrCantidad);
+    json.add("item", qrArticulo);
+    json.add("date", qrDate);
+
+    //json.setJsonData(qrCode.c_str());
+
+    // Genera un identificador único para el nuevo elemento y envía el objeto JSON a Firebase
+    String path = "/loans/active";
+    if (Firebase.pushJSON(fbdo, path, json))
+    {
+    Serial.println("JSON enviado exitosamente");
+    // El ID único generado por Firebase se puede obtener con fbdo.pushName()
+    Serial.println("ID único generado: " + fbdo.pushName());
+    }else
+    {
+      Serial.println("Error al enviar JSON: " + fbdo.errorReason());
+    }
+  }else
+  {
+    Serial.println("Firebase no está listo");
+  }//fin firebase ready
+}//fin funcion sendDataToFirebase
+
+//función utilizada en la otra funcion sendDataToFirebase para poder extrar campos del qr
+String extractValue(String data, String field){
+  int start = data.indexOf(field + ":") + field.length() + 1;
+  int end = data.indexOf(",", start);
+  if (end == -1) { // If there is no comma, then this is the last field.
+      end = data.length();
+  }
+
+  if (start != -1 && end != -1) {
+      String extracted = data.substring(start, end);
+      extracted.trim(); // Remove leading and trailing whitespace
+      return extracted;
+  } else {
+      return "";
+  }
+}//fin funcion extractValue
 
 
 

@@ -56,7 +56,7 @@ void setup()
   //Fin configuración firebase
 }
 
-String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR
+String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR, debe tener formato como este: Tipo:Prestamo,Matricula:1121120162,Articulo:Extension, Cantidad:1,Fecha:02-03-24
 String qrMatricula = "";
 String qrArticulo = "";
 int qrCantidad = 0;
@@ -85,22 +85,6 @@ void loop() {
   }//fin lectura qr
 }//fin loop
 
-//función utilizada en la otra funcion sendDataToFirebase para poder extrar campos del qr
-String extractValue(String data, String field){
-  int start = data.indexOf(field + ":") + field.length() + 1;
-  int end = data.indexOf(",", start);
-  if (end == -1) { // If there is no comma, then this is the last field.
-      end = data.length();
-  }
-
-  if (start != -1 && end != -1) {
-      String extracted = data.substring(start, end);
-      extracted.trim(); // Remove leading and trailing whitespace
-      return extracted;
-  } else {
-      return "";
-  }
-}
 void sendDataToFirebase(String qrCode){
     // Firebase.ready() should be called repeatedly to handle authentication tasks.
   if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
@@ -122,19 +106,46 @@ void sendDataToFirebase(String qrCode){
     json.add("item", qrArticulo);
     json.add("date", qrDate);
 
+    //json.setJsonData(qrCode.c_str());
+
     // Genera un identificador único para el nuevo elemento y envía el objeto JSON a Firebase
-    String path = "/loans/active";
-    if (Firebase.pushJSON(fbdo, path, json))
-    {
-    Serial.println("JSON enviado exitosamente");
-    // El ID único generado por Firebase se puede obtener con fbdo.pushName()
-    Serial.println("ID único generado: " + fbdo.pushName());
-    }else
-    {
-      Serial.println("Error al enviar JSON: " + fbdo.errorReason());
+    String pathActive = "/loans/active";
+    String pathHistory = "/loans/history";
+
+    // Enviar a /loans/active
+    if (Firebase.pushJSON(fbdo, pathActive, json)) {
+      Serial.println("JSON enviado exitosamente a /loans/active");
+      Serial.println("ID único generado: " + fbdo.pushName());
+    } else {
+      Serial.println("Error al enviar JSON a /loans/active: " + fbdo.errorReason());
+    }
+
+    // Enviar a /loans/history
+    if (Firebase.pushJSON(fbdo, pathHistory, json)) {
+      Serial.println("JSON enviado exitosamente a /loans/history");
+      Serial.println("ID único generado: " + fbdo.pushName());
+    } else {
+      Serial.println("Error al enviar JSON a /loans/history: " + fbdo.errorReason());
     }
   }else
   {
     Serial.println("Firebase no está listo");
+  }//fin firebase ready
+}//fin funcion sendDataToFirebase
+
+//función utilizada en la otra funcion sendDataToFirebase para poder extrar campos del qr
+String extractValue(String data, String field){
+  int start = data.indexOf(field + ":") + field.length() + 1;
+  int end = data.indexOf(",", start);
+  if (end == -1) { // If there is no comma, then this is the last field.
+      end = data.length();
+  }
+
+  if (start != -1 && end != -1) {
+      String extracted = data.substring(start, end);
+      extracted.trim(); // Remove leading and trailing whitespace
+      return extracted;
+  } else {
+      return "";
   }
 }
