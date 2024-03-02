@@ -1,4 +1,4 @@
-<h1 align="center" id="title">TechBox - Web</h1>
+<h1 align="center" id="title">TechBox - IoT</h1>
 
 <p align="center"> <img src="https://raw.githubusercontent.com/Hgdv11/TechBox/main/assets/logo-nobg.png" width="200" style="border-radius: 20px;" alt="project-image" /> </p>
 
