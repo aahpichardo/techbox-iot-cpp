@@ -198,7 +198,6 @@ void processQRCode(String qrCode){
       }
 }
 
-//Funcion para enviar los datos a firebase
 void sendDataToFirebase(String qrCode){
     // Firebase.ready() should be called repeatedly to handle authentication tasks.
   if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
@@ -223,15 +222,23 @@ void sendDataToFirebase(String qrCode){
     //json.setJsonData(qrCode.c_str());
 
     // Genera un identificador único para el nuevo elemento y envía el objeto JSON a Firebase
-    String path = "/loans/active";
-    if (Firebase.pushJSON(fbdo, path, json))
-    {
-    Serial.println("JSON enviado exitosamente");
-    // El ID único generado por Firebase se puede obtener con fbdo.pushName()
-    Serial.println("ID único generado: " + fbdo.pushName());
-    }else
-    {
-      Serial.println("Error al enviar JSON: " + fbdo.errorReason());
+    String pathActive = "/loans/active";
+    String pathHistory = "/loans/history";
+
+    // Enviar a /loans/active
+    if (Firebase.pushJSON(fbdo, pathActive, json)) {
+      Serial.println("JSON enviado exitosamente a /loans/active");
+      Serial.println("ID único generado: " + fbdo.pushName());
+    } else {
+      Serial.println("Error al enviar JSON a /loans/active: " + fbdo.errorReason());
+    }
+
+    // Enviar a /loans/history
+    if (Firebase.pushJSON(fbdo, pathHistory, json)) {
+      Serial.println("JSON enviado exitosamente a /loans/history");
+      Serial.println("ID único generado: " + fbdo.pushName());
+    } else {
+      Serial.println("Error al enviar JSON a /loans/history: " + fbdo.errorReason());
     }
   }else
   {
