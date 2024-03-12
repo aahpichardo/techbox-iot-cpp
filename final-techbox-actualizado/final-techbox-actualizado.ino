@@ -87,12 +87,14 @@ void setup() {
 bool qrReadRecently = false;
 
 //variables para el json
-String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR, debe tener formato como este: Tipo:Prestamo,Matricula:1121120162,Articulo:Extension, Cantidad:1,Fecha:02-03-24
-String qrMatricula = "";
-String qrArticulo = "";
-int qrCantidad = 0;
-String qrDate = "";
-//fin variables json
+String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR, debe tener formato como este: Tipo:Prest,Soli:-Ns_Yl3OPtq2Nurm4BjO,Adpr:1,HDMI:1,Eth:1,Ext:1
+
+int amountAdaptador = 0;
+int amountHDMI = 0;
+int amountEthernet = 0;
+int amountExtension = 0;
+int lapRelay = 0;
+
 
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
@@ -122,49 +124,87 @@ void loop() {
 
 void processQRCode(String qrCode){
   //PRESTAMO
-      if(!qrCode.isEmpty() && qrCode.indexOf("Prestamo") != -1){
-        Serial.println("Se esta realizando un prestamo");
-        if(qrCode.indexOf("Extension") != -1){
-          Serial.println("Encendiendo relay uno");
-          digitalWrite(relayOne, LOW);
-          delay(3000);
-          digitalWrite(relayOne, HIGH);
-        }else if(qrCode.indexOf("Ethernet") != -1){
-          Serial.println("Encendiendo relay dos");
-          digitalWrite(relayTwo, LOW);
-          delay(3000);
-          digitalWrite(relayTwo, HIGH);
-        }else if(qrCode.indexOf("Adaptador") != -1 ){
-          Serial.println("Encendiendo relay tres");
-          digitalWrite(relayThree, LOW);
-          delay(3000);
-          digitalWrite(relayThree, HIGH);
-        }else if(qrCode.indexOf("HDMI") != -1){
-          Serial.println("Encendiendo relay cuatro");
-          digitalWrite(relayFour, LOW);
-          delay(3000);
-          digitalWrite(relayFour, HIGH);
-        }
-        sendDataToFirebase(qrCode);
-          //DEVOLUCION
-      }else if(!qrCode.isEmpty() && qrCode.indexOf("Devolucion") != -1){
-        Serial.println("Se está realizando una devolución");
-        if(qrCode.indexOf("Extension") != -1){
-          Serial.println("Devolver Extension");
-        }else if(qrCode.indexOf("Ethernet") != -1){
-          Serial.println("Devolver Ethernet");
-        }else if(qrCode.indexOf("Adaptador") != -1){
-          Serial.println("Devolver adaptador");
-        }else if(qrCode.indexOf("HDMI") != -1){
-          Serial.println("Devolver HDMI");
-        }
+  if(!qrCode.isEmpty() && qrCode.indexOf("Prest") != -1){
+    Serial.println("Se esta realizando un prestamo");
+    amountExtension = extractValue(qrCode, "Ext").toInt();
+    amountEthernet = extractValue(qrCode, "Eth").toInt();
+    amountAdaptador = extractValue(qrCode, "Adpr").toInt();
+    amountHDMI = extractValue(qrCode, "HDMI").toInt();
 
-      }else{
-        Serial.println("QR invalido");
+    if (amountExtension != 0){
+      while(lapRelay < amountExtension){
+        Serial.println("Veces que se ha encendido el relay uno: ");
+        Serial.println(lapRelay);
+        digitalWrite(relayOne, LOW);
+        delay(2000);
+        digitalWrite(relayOne, HIGH);
+        lapRelay++;
       }
+      amountExtension = 0;
+      lapRelay=0;
+    }
+
+    if(amountEthernet != 0){
+      while(lapRelay < amountEthernet){
+        Serial.println("Veces que se ha encendido el relay dos: ");
+        Serial.println(lapRelay);
+        digitalWrite(relayTwo, LOW);
+        delay(2000);
+        digitalWrite(relayTwo, HIGH);
+        lapRelay++;
+      }
+      amountExtension = 0;
+      lapRelay=0;
+    }
+
+    if(amountAdpr != 0){
+      while(lapRelay < amountEthernet){
+        Serial.println("Veces que se ha encendido el relay tres: ");
+        Serial.println(lapRelay);
+        digitalWrite(relayThree, LOW);
+        delay(2000);
+        digitalWrite(relayThree, HIGH);
+        lapRelay++;
+      }
+      amountExtension = 0;
+      lapRelay=0;
+    }
+
+    if(amountHDMI != 0){
+      while(lapRelay < amountEthernet){
+        Serial.println("Veces que se ha encendido el relay cuatro: ");
+        Serial.println(lapRelay);
+        digitalWrite(relayFour, LOW);
+        delay(2000);
+        digitalWrite(relayFour, HIGH);
+        lapRelay++;
+      }
+      amountExtension = 0;
+      lapRelay=0;
+    }
+      //DEVOLUCION
+  }else if(!qrCode.isEmpty() && qrCode.indexOf("Devo") != -1){
+    Serial.println("Se está realizando una devolución");
+    amountExtension = extractValue(qrCode, "Ext").toInt();
+    amountEthernet = extractValue(qrCode, "Eth").toInt();
+    amountAdaptador = extractValue(qrCode, "Adpr").toInt();
+    amountHDMI = extractValue(qrCode, "HDMI").toInt();
+
+    if(ammountExtension != 0){
+      
+    }
+
+  }else{
+    Serial.println("QR invalido");
+  }//fin if general
+}//fin process qr
+
+
+bool itemPlaced(){
+
 }
 
-void sendDataToFirebase(String qrCode){
+/*void sendDataToFirebase(String qrCode){
     // Firebase.ready() should be called repeatedly to handle authentication tasks.
   if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
   {
@@ -210,7 +250,7 @@ void sendDataToFirebase(String qrCode){
   {
     Serial.println("Firebase no está listo");
   }//fin firebase ready
-}//fin funcion sendDataToFirebase
+}//fin funcion sendDataToFirebase*/
 
 //función utilizada en la otra funcion sendDataToFirebase para poder extrar campos del qr
 String extractValue(String data, String field){

@@ -2,7 +2,7 @@
 SoftwareSerial mySerial(16, 17); // TX (amarillo), RX (verde)
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   mySerial.begin(9600);
 
   Serial.println("Inicializando GM60...");
