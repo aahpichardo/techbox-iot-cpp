@@ -2,17 +2,26 @@
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 
+//Pines del Scaner (3.3v)
 SoftwareSerial mySerial(16, 17); // TX (amarillo), RX (verde) //Necesario para el escaner QR
 
-//Pines de los relevadores
+//Pines de los relevadores (5v)
 const byte relayOne = 25;
 const byte relayTwo = 26;
 const byte relayThree = 27;
 const byte relayFour = 33;
 
+//Pines sensores infrarrojo (5v)
+const byte irOne = 32;
+const byte irTwo = 35;
+const byte irThree = 34;
+const byte irFour = 14;
+const byte irFive = 12;
+
 //Conexión WIFI
 #define WIFI_SSID "IZZI-AB02"
 #define WIFI_PASSWORD "3C046117AB02"
+
 /*#define WIFI_SSID "Pixel"
 #define WIFI_PASSWORD "asdfg123"*/
 
@@ -22,7 +31,8 @@ const byte relayFour = 33;
 #define DATABASE_URL "pruebas-f0910-default-rtdb.firebaseio.com"
 #define USER_EMAIL "techhboxinc@gmail.com"
 #define USER_PASSWORD "prueba123"*/
-/* Definir credenciales de Firebase BD DE PRUEBA */
+
+/* Definir credenciales de Firebase BD */
 #define API_KEY "AIzaSyAXZdVllDQFU8N-tn2-5aPz1pc7npjZGPY"
 #define DATABASE_URL "https://techbox-be7c3-default-rtdb.firebaseio.com/"
 #define USER_EMAIL "techhboxinc@gmail.com"
@@ -81,20 +91,28 @@ void setup() {
   pinMode(relayFour, OUTPUT);
   //Fin setup relés
 
-}
+  //Setup IRojos
+  pinMode(irOne, INPUT);
+  pinMode(irTwo, INPUT);
+  pinMode(irThree, INPUT);
+  pinMode(irFour, INPUT);
+  pinMode(irFive, INPUT);
+  //fin setup IR
 
-// Variable de estado para rastrear si se ha leído un código QR recientemente
-bool qrReadRecently = false;
+}//fin setup
 
 //variables para el json
 String qrCode = "";  // Inicializa una cadena vacía para almacenar el código QR, debe tener formato como este: Tipo:Prest,Soli:-Ns_Yl3OPtq2Nurm4BjO,Adpr:1,HDMI:1,Eth:1,Ext:1
 
+//Variables para saber la cantidad de articulos que se prestarán o se devolverán
 int amountAdaptador = 0;
 int amountHDMI = 0;
 int amountEthernet = 0;
 int amountExtension = 0;
-int lapRelay = 0;
+int i = 0; //esta es para los while para que se activen los motores n cantidad de veces para sacar las cosas.
 
+//Variable para leer el IR
+int irValue = 0;
 
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
@@ -126,61 +144,61 @@ void processQRCode(String qrCode){
   //PRESTAMO
   if(!qrCode.isEmpty() && qrCode.indexOf("Prest") != -1){
     Serial.println("Se esta realizando un prestamo");
-    amountExtension = extractValue(qrCode, "Ext").toInt();
+    amountExtension = extractValue(qrCode,"Ext").toInt();
     amountEthernet = extractValue(qrCode, "Eth").toInt();
     amountAdaptador = extractValue(qrCode, "Adpr").toInt();
     amountHDMI = extractValue(qrCode, "HDMI").toInt();
 
     if (amountExtension != 0){
-      while(lapRelay < amountExtension){
+      while(i < amountExtension){
         Serial.println("Veces que se ha encendido el relay uno: ");
-        Serial.println(lapRelay);
+        Serial.println(i);
         digitalWrite(relayOne, LOW);
         delay(2000);
         digitalWrite(relayOne, HIGH);
-        lapRelay++;
+        i++;
       }
       amountExtension = 0;
-      lapRelay=0;
+      i=0;
     }
 
     if(amountEthernet != 0){
-      while(lapRelay < amountEthernet){
+      while(i < amountEthernet){
         Serial.println("Veces que se ha encendido el relay dos: ");
-        Serial.println(lapRelay);
+        Serial.println(i);
         digitalWrite(relayTwo, LOW);
         delay(2000);
         digitalWrite(relayTwo, HIGH);
-        lapRelay++;
+        i++;
       }
       amountExtension = 0;
-      lapRelay=0;
+      i=0;
     }
 
-    if(amountAdpr != 0){
-      while(lapRelay < amountEthernet){
+    if(amountAdaptador != 0){
+      while(i < amountEthernet){
         Serial.println("Veces que se ha encendido el relay tres: ");
-        Serial.println(lapRelay);
+        Serial.println(i);
         digitalWrite(relayThree, LOW);
         delay(2000);
         digitalWrite(relayThree, HIGH);
-        lapRelay++;
+        i++;
       }
       amountExtension = 0;
-      lapRelay=0;
+      i=0;
     }
 
     if(amountHDMI != 0){
-      while(lapRelay < amountEthernet){
+      while(i < amountEthernet){
         Serial.println("Veces que se ha encendido el relay cuatro: ");
-        Serial.println(lapRelay);
+        Serial.println(i);
         digitalWrite(relayFour, LOW);
         delay(2000);
         digitalWrite(relayFour, HIGH);
-        lapRelay++;
+        i++;
       }
       amountExtension = 0;
-      lapRelay=0;
+      i=0;
     }
       //DEVOLUCION
   }else if(!qrCode.isEmpty() && qrCode.indexOf("Devo") != -1){
@@ -190,19 +208,34 @@ void processQRCode(String qrCode){
     amountAdaptador = extractValue(qrCode, "Adpr").toInt();
     amountHDMI = extractValue(qrCode, "HDMI").toInt();
 
-    if(ammountExtension != 0){
-      
+    if(amountExtension != 0){
+      while(i < amountExtension){
+        Serial.println("Coloca el item, se enciende led para indicar");
+        irValue = digitalRead(irOne);
+        delay(3000);
+        if(irValue == LOW){
+          Serial.println("Se devolvió el item");
+          Serial.println(i);
+          digitalWrite(relayOne, LOW);
+          delay(2000);
+          digitalWrite(relayOne, HIGH);
+          i++;
+        }else{
+          Serial.println("No se devolvió nada, intentalo de nuevo");
+        }
+      }
+      i = 0;
+      amountExtension = 0;
+      Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountExtension: " + String(amountExtension));
     }
-
+  //fin devolucion
   }else{
     Serial.println("QR invalido");
   }//fin if general
 }//fin process qr
 
 
-bool itemPlaced(){
 
-}
 
 /*void sendDataToFirebase(String qrCode){
     // Firebase.ready() should be called repeatedly to handle authentication tasks.
