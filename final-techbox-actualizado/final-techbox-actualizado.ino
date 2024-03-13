@@ -158,6 +158,7 @@ void processQRCode(String qrCode){
         digitalWrite(relayOne, HIGH);
         i++;
       }
+      Serial.println("Todos los items fueron entregados con éxito");
       amountExtension = 0;
       i=0;
     }
@@ -171,7 +172,7 @@ void processQRCode(String qrCode){
         digitalWrite(relayTwo, HIGH);
         i++;
       }
-      amountExtension = 0;
+      amountEthernet = 0;
       i=0;
     }
 
@@ -184,7 +185,7 @@ void processQRCode(String qrCode){
         digitalWrite(relayThree, HIGH);
         i++;
       }
-      amountExtension = 0;
+      amountAdaptador = 0;
       i=0;
     }
 
@@ -197,7 +198,7 @@ void processQRCode(String qrCode){
         digitalWrite(relayFour, HIGH);
         i++;
       }
-      amountExtension = 0;
+      amountHDMI = 0;
       i=0;
     }
       //DEVOLUCION
@@ -227,6 +228,27 @@ void processQRCode(String qrCode){
       i = 0;
       amountExtension = 0;
       Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountExtension: " + String(amountExtension));
+    }
+
+    if(amountEthernet != 0){
+      while(i < amountEthernet){
+        Serial.println("Coloca el item, se enciende led para indicar");
+        irValue = digitalRead(irOne);
+        delay(3000);
+        if(irValue == LOW){
+          Serial.println("Se devolvió el item");
+          Serial.println(i);
+          digitalWrite(relayTwo, LOW);
+          delay(2000);
+          digitalWrite(relayTwo, HIGH);
+          i++;
+        }else{
+          Serial.println("No se devolvió nada, intentalo de nuevo");
+        }
+      }
+      i = 0;
+      amountEthernet = 0;
+      Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountEthernet: " + String(amountEthernet));
     }
   //fin devolucion
   }else{
