@@ -19,11 +19,11 @@ const byte irFour = 14;
 const byte irFive = 12;
 
 //Conexión WIFI
-#define WIFI_SSID "IZZI-AB02"
-#define WIFI_PASSWORD "3C046117AB02"
+/*#define WIFI_SSID "IZZI-AB02"
+#define WIFI_PASSWORD "3C046117AB02"*/
 
-/*#define WIFI_SSID "Pixel"
-#define WIFI_PASSWORD "asdfg123"*/
+#define WIFI_SSID "Pixel"
+#define WIFI_PASSWORD "asdfg123"
 
 //Configuración de Firebase
 /* Definir credenciales de Firebase BD DE PRUEBA */
@@ -46,8 +46,6 @@ FirebaseAuth auth;
 FirebaseConfig config;
 
 unsigned long sendDataPrevMillis = 0;
-
-unsigned long count = 0;
 
 //Fin configuración de firebase
 
@@ -114,6 +112,10 @@ int i = 0; //esta es para los while para que se activen los motores n cantidad d
 //Variable para leer el IR
 int irValue = 0;
 
+//Variable para guardar el ID del pedido
+String userId = "";
+String orderId = "";
+
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
       Serial.println("Puedes escanear");
@@ -154,7 +156,7 @@ void processQRCode(String qrCode){
         Serial.println("Veces que se ha encendido el relay uno: ");
         Serial.println(i);
         digitalWrite(relayOne, LOW);
-        delay(2000);
+        delay(3000);
         digitalWrite(relayOne, HIGH);
         i++;
       }
@@ -218,7 +220,7 @@ void processQRCode(String qrCode){
           Serial.println("Se devolvió el item");
           Serial.println(i);
           digitalWrite(relayOne, LOW);
-          delay(2000);
+          delay(3000);
           digitalWrite(relayOne, HIGH);
           i++;
         }else{
@@ -306,6 +308,32 @@ void processQRCode(String qrCode){
     Serial.println("Firebase no está listo");
   }//fin firebase ready
 }//fin funcion sendDataToFirebase*/
+
+//sendDataToFirebase(orderId, userId, "Recogido");
+//sendDataToFirebase(orderId, userId, "Devuelto")
+void sendDataToFirebase(String orderId, String userId, String customStatus){
+  // Comprueba si Firebase está listo
+  if (Firebase.ready())
+  {
+    // Define la ruta a la orden
+    String pathOrder = "/loans/orders/" + userId + "/" + orderId;
+
+    // Crea un objeto JSON para actualizar el estado
+    FirebaseJson json;
+    json.add("status", customStatus); // Agrega el estado personalizado al objeto JSON
+
+    // Actualiza el estado en Firebase
+    if (Firebase.updateNode(fbdo, pathOrder, json)) {
+      Serial.println("Estado de la orden actualizado exitosamente");
+    } else {
+      Serial.println("Error al actualizar el estado de la orden: " + fbdo.errorReason());
+    }
+  }else
+  {
+    Serial.println("Firebase no está listo");
+  }
+}
+
 
 //función utilizada en la otra funcion sendDataToFirebase para poder extrar campos del qr
 String extractValue(String data, String field){
