@@ -6,24 +6,24 @@
 SoftwareSerial mySerial(16, 17); // TX (amarillo), RX (verde) //Necesario para el escaner QR
 
 //Pines de los relevadores (5v)
-const byte relayOne = 25;
-const byte relayTwo = 26;
-const byte relayThree = 27;
-const byte relayFour = 33;
+const byte relayExtension = 25; //IN1
+const byte relayEthernet = 26; //IN2
+const byte relayAdaptador = 27; //IN3
+const byte relayHDMI = 33; //IN4
 
 //Pines sensores infrarrojo (5v)
-const byte irOne = 32;
-const byte irTwo = 35;
-const byte irThree = 34;
-const byte irFour = 14;
-const byte irFive = 12;
+const byte irExtension = 12; //no funciona el 12
+const byte irEthernet = 35;
+const byte irAdaptador = 34;
+const byte irHDMI = 14;
+const byte irEngine = 32;
 
 //Conexión WIFI
-/*#define WIFI_SSID "IZZI-AB02"
-#define WIFI_PASSWORD "3C046117AB02"*/
+#define WIFI_SSID "IZZI-AB02"
+#define WIFI_PASSWORD "3C046117AB02"
 
-#define WIFI_SSID "Pixel"
-#define WIFI_PASSWORD "asdfg123"
+/*#define WIFI_SSID "Pixel"
+#define WIFI_PASSWORD "asdfg123"*/
 
 //Configuración de Firebase
 /* Definir credenciales de Firebase BD DE PRUEBA */
@@ -83,18 +83,18 @@ void setup() {
   //Fin configuración firebase
 
   //Inicia setup de relés
-  pinMode(relayOne, OUTPUT);
-  pinMode(relayTwo, OUTPUT);
-  pinMode(relayThree, OUTPUT);
-  pinMode(relayFour, OUTPUT);
+  pinMode(relayExtension, OUTPUT);
+  pinMode(relayEthernet, OUTPUT);
+  pinMode(relayAdaptador, OUTPUT);
+  pinMode(relayHDMI, OUTPUT);
   //Fin setup relés
 
   //Setup IRojos
-  pinMode(irOne, INPUT);
-  pinMode(irTwo, INPUT);
-  pinMode(irThree, INPUT);
-  pinMode(irFour, INPUT);
-  pinMode(irFive, INPUT);
+  //pinMode(irExtension, INPUT);
+  pinMode(irEthernet, INPUT);
+  pinMode(irAdaptador, INPUT);
+  pinMode(irHDMI, INPUT);
+  pinMode(irEngine, INPUT);
   //fin setup IR
 
 }//fin setup
@@ -107,7 +107,7 @@ int amountAdaptador = 0;
 int amountHDMI = 0;
 int amountEthernet = 0;
 int amountExtension = 0;
-int i = 0; //esta es para los while para que se activen los motores n cantidad de veces para sacar las cosas.
+//int i = 0; //esta es para los while para que se activen los motores n cantidad de veces para sacar las cosas.
 
 //Variable para leer el IR
 int irValue = 0;
@@ -134,75 +134,51 @@ void loop() {
       qrCode = "";
     }else {
       // Si no hay datos disponibles, asegúrate de que el relé esté activado (osease, desactivado)
-      digitalWrite(relayOne, HIGH);
-      digitalWrite(relayTwo, HIGH);
-      digitalWrite(relayThree, HIGH);
-      digitalWrite(relayFour, HIGH);
+      digitalWrite(relayExtension, HIGH);
+      digitalWrite(relayEthernet, HIGH);
+      digitalWrite(relayAdaptador, HIGH);
+      digitalWrite(relayHDMI, HIGH);
     }//fin lectura qr
 
 }//fin loop
 
 void processQRCode(String qrCode){
   //PRESTAMO
-  if(!qrCode.isEmpty() && qrCode.indexOf("Prest") != -1){
+  if(!qrCode.isEmpty() && qrCode.indexOf("Pre") != -1){
     Serial.println("Se esta realizando un prestamo");
-    amountExtension = extractValue(qrCode,"Ext").toInt();
-    amountEthernet = extractValue(qrCode, "Eth").toInt();
-    amountAdaptador = extractValue(qrCode, "Adpr").toInt();
-    amountHDMI = extractValue(qrCode, "HDMI").toInt();
+    amountExtension = extractValue(qrCode,"Ex").toInt();
+    amountEthernet = extractValue(qrCode, "Et").toInt();
+    amountAdaptador = extractValue(qrCode, "Ad").toInt();
+    amountHDMI = extractValue(qrCode, "HD").toInt();
 
-    if (amountExtension != 0){
-      while(i < amountExtension){
-        Serial.println("Veces que se ha encendido el relay uno: ");
-        Serial.println(i);
-        digitalWrite(relayOne, LOW);
-        delay(3000);
-        digitalWrite(relayOne, HIGH);
-        i++;
-      }
-      Serial.println("Todos los items fueron entregados con éxito");
-      amountExtension = 0;
-      i=0;
+  /*if (amountExtension != 0 && i == 0){
+    while(i < amountExtension){
+        irValue = digitalRead(irEngine);
+        delay(500);
+        while(irValue != LOW && i != amountExtension){
+            Serial.println("Veces que se ha encendido el relay uno: ");
+            Serial.println(i);
+            digitalWrite(relayExtension, LOW);
+            delay(3000);
+            i++;
+            irValue = digitalRead(irEngine); // use = instead of ==
+        }
+        digitalWrite(relayExtension, HIGH);
     }
+    Serial.println("Todos los items fueron entregados con éxito");
+    amountExtension = 0;
+    i=0;
+  }*/
 
-    if(amountEthernet != 0){
-      while(i < amountEthernet){
-        Serial.println("Veces que se ha encendido el relay dos: ");
-        Serial.println(i);
-        digitalWrite(relayTwo, LOW);
-        delay(2000);
-        digitalWrite(relayTwo, HIGH);
-        i++;
-      }
-      amountEthernet = 0;
-      i=0;
-    }
+    moveItems(amountExtension, relayExtension);
+    amountExtension = 0;
+    moveItems(amountEthernet, relayEthernet);
+    amountEthernet=0;
+    moveItems(amountAdaptador, relayAdaptador);
+    amountAdaptador=0;
+    moveItems(amountHDMI, relayHDMI);
+    amountHDMI=0;
 
-    if(amountAdaptador != 0){
-      while(i < amountEthernet){
-        Serial.println("Veces que se ha encendido el relay tres: ");
-        Serial.println(i);
-        digitalWrite(relayThree, LOW);
-        delay(2000);
-        digitalWrite(relayThree, HIGH);
-        i++;
-      }
-      amountAdaptador = 0;
-      i=0;
-    }
-
-    if(amountHDMI != 0){
-      while(i < amountEthernet){
-        Serial.println("Veces que se ha encendido el relay cuatro: ");
-        Serial.println(i);
-        digitalWrite(relayFour, LOW);
-        delay(2000);
-        digitalWrite(relayFour, HIGH);
-        i++;
-      }
-      amountHDMI = 0;
-      i=0;
-    }
       //DEVOLUCION
   }else if(!qrCode.isEmpty() && qrCode.indexOf("Devo") != -1){
     Serial.println("Se está realizando una devolución");
@@ -211,17 +187,17 @@ void processQRCode(String qrCode){
     amountAdaptador = extractValue(qrCode, "Adpr").toInt();
     amountHDMI = extractValue(qrCode, "HDMI").toInt();
 
-    if(amountExtension != 0){
+    /*if(amountExtension != 0){
       while(i < amountExtension){
         Serial.println("Coloca el item, se enciende led para indicar");
-        irValue = digitalRead(irOne);
+        irValue = digitalRead(irEngine);
         delay(3000);
         if(irValue == LOW){
           Serial.println("Se devolvió el item");
           Serial.println(i);
-          digitalWrite(relayOne, LOW);
+          digitalWrite(relayExtension, LOW);
           delay(3000);
-          digitalWrite(relayOne, HIGH);
+          digitalWrite(relayExtension, HIGH);
           i++;
         }else{
           Serial.println("No se devolvió nada, intentalo de nuevo");
@@ -235,14 +211,14 @@ void processQRCode(String qrCode){
     if(amountEthernet != 0){
       while(i < amountEthernet){
         Serial.println("Coloca el item, se enciende led para indicar");
-        irValue = digitalRead(irOne);
+        irValue = digitalRead(irExtension);
         delay(3000);
         if(irValue == LOW){
           Serial.println("Se devolvió el item");
           Serial.println(i);
-          digitalWrite(relayTwo, LOW);
+          digitalWrite(relayEthernet, LOW);
           delay(2000);
-          digitalWrite(relayTwo, HIGH);
+          digitalWrite(relayEthernet, HIGH);
           i++;
         }else{
           Serial.println("No se devolvió nada, intentalo de nuevo");
@@ -251,14 +227,34 @@ void processQRCode(String qrCode){
       i = 0;
       amountEthernet = 0;
       Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountEthernet: " + String(amountEthernet));
-    }
+    }*/
   //fin devolucion
   }else{
     Serial.println("QR invalido");
   }//fin if general
 }//fin process qr
 
-
+void moveItems(int amount, byte relay) {
+    int i = 0;
+    if (amount != 0 && i == 0){
+        while(i < amount){
+            irValue = digitalRead(irEngine);
+            delay(500);
+            while(irValue != LOW && i != amount){
+                Serial.println("Veces que se ha encendido el relay: ");
+                Serial.println(i);
+                digitalWrite(relay, LOW);
+                delay(3000);
+                i++;
+                irValue = digitalRead(irEngine);
+            }
+            digitalWrite(relay, HIGH);
+        }
+        Serial.println("Todos los items fueron entregados con éxito");
+        amount = 0;
+        i=0;
+    }
+}
 
 
 /*void sendDataToFirebase(String qrCode){
