@@ -186,13 +186,13 @@ void processQRCode(String qrCode){
     i=0;
   }*/
 
-    moveItems(amountExtension, relayExtension, userId, orderId);
+    moveItems(amountExtension, relayExtension, userId, orderId, "extension");
     amountExtension = 0;
-    moveItems(amountEthernet, relayEthernet, userId, orderId);
+    moveItems(amountEthernet, relayEthernet, userId, orderId, "ethernet");
     amountEthernet=0;
-    moveItems(amountAdaptador, relayAdaptador, userId, orderId);
+    moveItems(amountAdaptador, relayAdaptador, userId, orderId, "adaptador");
     amountAdaptador=0;
-    moveItems(amountHDMI, relayHDMI, userId, orderId);
+    moveItems(amountHDMI, relayHDMI, userId, orderId, "hdmi");
     amountHDMI=0;
     qrCode="";
 
@@ -228,13 +228,13 @@ void processQRCode(String qrCode){
       amountExtension = 0;
       Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountExtension: " + String(amountExtension));
     }*/
-    returnItems(amountExtension, relayExtension, irExtension, userId, orderId);
+    returnItems(amountExtension, relayExtension, irExtension, userId, orderId, "extension");
     amountExtension = 0;
-    returnItems(amountEthernet, relayEthernet, irEthernet, userId, orderId);
+    returnItems(amountEthernet, relayEthernet, irEthernet, userId, orderId, "ethernet");
     amountEthernet = 0;
-    returnItems(amountAdaptador, relayAdaptador,irAdaptador, userId, orderId);
+    returnItems(amountAdaptador, relayAdaptador,irAdaptador, userId, orderId, "adaptador");
     amountAdaptador = 0;
-    returnItems(amountHDMI, relayHDMI, irHDMI, userId, orderId);
+    returnItems(amountHDMI, relayHDMI, irHDMI, userId, orderId, "hdmi");
     amountHDMI = 0;
     qrCode="";
 
@@ -248,7 +248,7 @@ void processQRCode(String qrCode){
 }//fin process qr
 
 //PARA PRESTAMO
-void moveItems(int amount, byte relay, String userId, String orderId) {
+void moveItems(int amount, byte relay, String userId, String orderId, String materialId) {
     int i = 0;
     if (amount != 0 && i == 0){
         while(i < amount){
@@ -266,13 +266,14 @@ void moveItems(int amount, byte relay, String userId, String orderId) {
         }
         Serial.println("Todos los items fueron entregados con éxito");
         sendDataToFirebase(orderId, userId, "En uso, se escaneó el QR");
+        updateMaterialCount(materialId, amount, "subtract");
         amount = 0;
         i=0;
     }
 }//fin moveitems
 
 //PARA DEVOLUCION
-void returnItems(int amount, byte relay, byte irSensor, String userId, String orderId) {
+void returnItems(int amount, byte relay, byte irSensor, String userId, String orderId, String materialId) {
     int i = 0;
     if(amount != 0){
         while(i < amount){
@@ -291,6 +292,7 @@ void returnItems(int amount, byte relay, byte irSensor, String userId, String or
             }
         }
         sendDataToFirebase(orderId, userId, "Devuelto");
+        updateMaterialCount(materialId, amount, "add");
         i = 0;
         amount = 0;
         Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amount: " + String(amount));
@@ -311,55 +313,6 @@ void blinkLed(byte led){
   digitalWrite(led, LOW);
 }
 
-
-/*void sendDataToFirebase(String qrCode){
-    // Firebase.ready() should be called repeatedly to handle authentication tasks.
-  if (Firebase.ready() && (millis() - sendDataPrevMillis > 15000 || sendDataPrevMillis == 0))
-  {
-    sendDataPrevMillis = millis();
-
-    // For the usage of FirebaseJson, see examples/FirebaseJson/BasicUsage/Create_Edit_Parse.ino
-    FirebaseJson json;
-
-    //extraccion del qr a la matricula
-    qrMatricula = extractValue(qrCode, "Matricula");
-    qrArticulo = extractValue(qrCode, "Articulo");
-    qrCantidad = extractValue(qrCode, "Cantidad").toInt();
-    qrDate = extractValue(qrCode, "Fecha");
-
-    // Agrega los datos al objeto JSON
-    json.add("userRegistration", qrMatricula);
-    json.add("amount", qrCantidad);
-    json.add("item", qrArticulo);
-    json.add("date", qrDate);
-
-    //json.setJsonData(qrCode.c_str());
-
-    // Genera un identificador único para el nuevo elemento y envía el objeto JSON a Firebase
-    String pathActive = "/loans/active";
-    String pathHistory = "/loans/history";
-
-    // Enviar a /loans/active
-    if (Firebase.pushJSON(fbdo, pathActive, json)) {
-      Serial.println("JSON enviado exitosamente a /loans/active");
-      Serial.println("ID único generado: " + fbdo.pushName());
-    } else {
-      Serial.println("Error al enviar JSON a /loans/active: " + fbdo.errorReason());
-    }
-
-    // Enviar a /loans/history
-    if (Firebase.pushJSON(fbdo, pathHistory, json)) {
-      Serial.println("JSON enviado exitosamente a /loans/history");
-      Serial.println("ID único generado: " + fbdo.pushName());
-    } else {
-      Serial.println("Error al enviar JSON a /loans/history: " + fbdo.errorReason());
-    }
-  }else
-  {
-    Serial.println("Firebase no está listo");
-  }//fin firebase ready
-}//fin funcion sendDataToFirebase*/
-
 //sendDataToFirebase(orderId, userId, "Recogido");
 //sendDataToFirebase(orderId, userId, "Devuelto")
 void sendDataToFirebase(String orderId, String userId, String customStatus){
@@ -378,6 +331,42 @@ String pathOrder = "/loans/" + userId + "/orders/" + orderId;
       Serial.println("Estado de la orden actualizado exitosamente");
     } else {
       Serial.println("Error al actualizar el estado de la orden: " + fbdo.errorReason());
+    }
+  }else
+  {
+    Serial.println("Firebase no está listo");
+  }
+}
+
+void updateMaterialCount(String materialId, int amount, String operation){
+  // Comprueba si Firebase está listo
+  if (Firebase.ready())
+  {
+    // Define la ruta al material
+    String pathMaterial = "/material/" + materialId + "/available";
+
+    // Obtiene el valor actual del material
+    if (Firebase.getInt(fbdo, pathMaterial)) {
+      int currentAmount = fbdo.intData();
+
+      // Actualiza el valor del material
+      if (operation == "add")
+      {
+        currentAmount += amount;
+      }
+      else if (operation == "subtract")
+      {
+        currentAmount -= amount;
+      }
+
+      // Actualiza el valor en Firebase
+      if (Firebase.set(fbdo, pathMaterial, currentAmount)) {
+        Serial.println("Valor del material actualizado exitosamente");
+      } else {
+        Serial.println("Error al actualizar el valor del material: " + fbdo.errorReason());
+      }
+    } else {
+      Serial.println("Error al obtener el valor del material: " + fbdo.errorReason());
     }
   }else
   {
