@@ -101,6 +101,10 @@ void setup() {
   pinMode(irEngine, INPUT);
   //fin setup IR
 
+  //Setup leds
+  pinMode(ledVerde, OUTPUT);
+  pinMode(ledRojo,OUTPUT);
+
 }//fin setup
 
 //variables para el json
@@ -122,8 +126,9 @@ String orderId = "";
 
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
-      digitalWrite(13, LOW); // Apaga el LED rojo
-      digitalWrite(12, HIGH); // Enciende el LED verde
+      //blinkLed(ledVerde);
+      //blinkLed(ledRojo);
+      //digitalWrite(12, LOW);
       Serial.println("Puedes escanear");
       // Lee los datos hasta que se reciba un carácter de nueva línea
       while (mySerial.available()) { //para agregar lo que se escanea a una variable, ver si se puede optimizar
@@ -144,9 +149,8 @@ void loop() {
       digitalWrite(relayEthernet, HIGH);
       digitalWrite(relayAdaptador, HIGH);
       digitalWrite(relayHDMI, HIGH);
-      digitalWrite(12, LOW); // Apaga el LED verde
-      digitalWrite(13, HIGH); // Enciende el LED rojo
-       delay(2000); // Espera 1 segundo antes de la próxima iteración del ciclo loop
+      //digitalWrite(12, HIGH); // Apaga el LED verde
+      //digitalWrite(13, HIGH); // Enciende el LED rojo
     }//fin lectura qr
 
 }//fin loop
@@ -188,10 +192,9 @@ void processQRCode(String qrCode){
     amountAdaptador=0;
     moveItems(amountHDMI, relayHDMI);
     amountHDMI=0;
+    qrCode="";
 
     blinkLed(ledVerde);
-    blinkLed(ledRojo);
-
       //DEVOLUCION
   }else if(!qrCode.isEmpty() && qrCode.indexOf("Dev") != -1){
     blinkLed(ledVerde);
@@ -229,13 +232,14 @@ void processQRCode(String qrCode){
     amountAdaptador = 0;
     returnItems(amountHDMI, relayHDMI, irHDMI);
     amountHDMI = 0;
+    qrCode="";
 
     blinkLed(ledVerde);
-    blinkLed(ledRojo);
 
   //fin devolucion
   }else{
     Serial.println("QR invalido");
+    blinkLed(ledRojo);
   }//fin if general
 }//fin process qr
 
@@ -288,6 +292,14 @@ void returnItems(int amount, byte relay, byte irSensor) {
 }//Fin return items
 
 void blinkLed(byte led){
+  digitalWrite(led, HIGH);
+  delay(500);
+  digitalWrite(led, LOW);
+  delay(500);
+  digitalWrite(led, HIGH);
+  delay(500);
+  digitalWrite(led, LOW);
+  delay(500);
   digitalWrite(led, HIGH);
   delay(500);
   digitalWrite(led, LOW);
