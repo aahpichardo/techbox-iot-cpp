@@ -164,6 +164,8 @@ void processQRCode(String qrCode){
     amountEthernet = extractValue(qrCode, "Et").toInt();
     amountAdaptador = extractValue(qrCode, "Ad").toInt();
     amountHDMI = extractValue(qrCode, "HD").toInt();
+    userId = extractValue(qrCode, "Us");
+    orderId = extractValue(qrCode, "So");
 
   /*if (amountExtension != 0 && i == 0){
     while(i < amountExtension){
@@ -184,13 +186,13 @@ void processQRCode(String qrCode){
     i=0;
   }*/
 
-    moveItems(amountExtension, relayExtension);
+    moveItems(amountExtension, relayExtension, userId, orderId);
     amountExtension = 0;
-    moveItems(amountEthernet, relayEthernet);
+    moveItems(amountEthernet, relayEthernet, userId, orderId);
     amountEthernet=0;
-    moveItems(amountAdaptador, relayAdaptador);
+    moveItems(amountAdaptador, relayAdaptador, userId, orderId);
     amountAdaptador=0;
-    moveItems(amountHDMI, relayHDMI);
+    moveItems(amountHDMI, relayHDMI, userId, orderId);
     amountHDMI=0;
     qrCode="";
 
@@ -203,6 +205,8 @@ void processQRCode(String qrCode){
     amountEthernet = extractValue(qrCode, "Et").toInt();
     amountAdaptador = extractValue(qrCode, "Ad").toInt();
     amountHDMI = extractValue(qrCode, "HD").toInt();
+    userId = extractValue(qrCode, "Us");
+    orderId = extractValue(qrCode, "So");
 
     /*if(amountExtension != 0){
       while(i < amountExtension){
@@ -224,13 +228,13 @@ void processQRCode(String qrCode){
       amountExtension = 0;
       Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountExtension: " + String(amountExtension));
     }*/
-    returnItems(amountExtension, relayExtension, irExtension);
+    returnItems(amountExtension, relayExtension, irExtension, userId, orderId);
     amountExtension = 0;
-    returnItems(amountEthernet, relayEthernet, irEthernet);
+    returnItems(amountEthernet, relayEthernet, irEthernet, userId, orderId);
     amountEthernet = 0;
-    returnItems(amountAdaptador, relayAdaptador,irAdaptador);
+    returnItems(amountAdaptador, relayAdaptador,irAdaptador, userId, orderId);
     amountAdaptador = 0;
-    returnItems(amountHDMI, relayHDMI, irHDMI);
+    returnItems(amountHDMI, relayHDMI, irHDMI, userId, orderId);
     amountHDMI = 0;
     qrCode="";
 
@@ -244,7 +248,7 @@ void processQRCode(String qrCode){
 }//fin process qr
 
 //PARA PRESTAMO
-void moveItems(int amount, byte relay) {
+void moveItems(int amount, byte relay, String userId, String orderId) {
     int i = 0;
     if (amount != 0 && i == 0){
         while(i < amount){
@@ -261,13 +265,14 @@ void moveItems(int amount, byte relay) {
             digitalWrite(relay, HIGH);
         }
         Serial.println("Todos los items fueron entregados con éxito");
+        sendDataToFirebase(orderId, userId, "En uso, se escaneó el QR");
         amount = 0;
         i=0;
     }
 }//fin moveitems
 
 //PARA DEVOLUCION
-void returnItems(int amount, byte relay, byte irSensor) {
+void returnItems(int amount, byte relay, byte irSensor, String userId, String orderId) {
     int i = 0;
     if(amount != 0){
         while(i < amount){
@@ -285,6 +290,7 @@ void returnItems(int amount, byte relay, byte irSensor) {
                 Serial.println("No se devolvió nada, intentalo de nuevo");
             }
         }
+        sendDataToFirebase(orderId, userId, "Devuelto");
         i = 0;
         amount = 0;
         Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amount: " + String(amount));
@@ -361,7 +367,7 @@ void sendDataToFirebase(String orderId, String userId, String customStatus){
   if (Firebase.ready())
   {
     // Define la ruta a la orden
-    String pathOrder = "/loans/orders/" + userId + "/" + orderId;
+String pathOrder = "/loans/" + userId + "/orders/" + orderId;
 
     // Crea un objeto JSON para actualizar el estado
     FirebaseJson json;
