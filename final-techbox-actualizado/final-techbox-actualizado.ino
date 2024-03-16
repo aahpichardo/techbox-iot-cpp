@@ -12,11 +12,15 @@ const byte relayAdaptador = 27; //IN3
 const byte relayHDMI = 33; //IN4
 
 //Pines sensores infrarrojo (5v)
-const byte irExtension = 12; //no funciona el 12
+const byte irExtension = 15; //no funciona el 12
 const byte irEthernet = 35;
 const byte irAdaptador = 34;
 const byte irHDMI = 14;
 const byte irEngine = 32;
+
+//Pines LEDS (3.3v)
+const byte ledVerde = 12;
+const byte ledRojo = 13;
 
 //Conexión WIFI
 #define WIFI_SSID "IZZI-AB02"
@@ -90,7 +94,7 @@ void setup() {
   //Fin setup relés
 
   //Setup IRojos
-  //pinMode(irExtension, INPUT);
+  pinMode(irExtension, INPUT);
   pinMode(irEthernet, INPUT);
   pinMode(irAdaptador, INPUT);
   pinMode(irHDMI, INPUT);
@@ -118,6 +122,8 @@ String orderId = "";
 
 void loop() {
     if (mySerial.available() > 0) { //para saber si se esta escaneando algo
+      digitalWrite(13, LOW); // Apaga el LED rojo
+      digitalWrite(12, HIGH); // Enciende el LED verde
       Serial.println("Puedes escanear");
       // Lee los datos hasta que se reciba un carácter de nueva línea
       while (mySerial.available()) { //para agregar lo que se escanea a una variable, ver si se puede optimizar
@@ -138,6 +144,9 @@ void loop() {
       digitalWrite(relayEthernet, HIGH);
       digitalWrite(relayAdaptador, HIGH);
       digitalWrite(relayHDMI, HIGH);
+      digitalWrite(12, LOW); // Apaga el LED verde
+      digitalWrite(13, HIGH); // Enciende el LED rojo
+       delay(2000); // Espera 1 segundo antes de la próxima iteración del ciclo loop
     }//fin lectura qr
 
 }//fin loop
@@ -145,6 +154,7 @@ void loop() {
 void processQRCode(String qrCode){
   //PRESTAMO
   if(!qrCode.isEmpty() && qrCode.indexOf("Pre") != -1){
+    blinkLed(ledVerde);
     Serial.println("Se esta realizando un prestamo");
     amountExtension = extractValue(qrCode,"Ex").toInt();
     amountEthernet = extractValue(qrCode, "Et").toInt();
@@ -179,13 +189,17 @@ void processQRCode(String qrCode){
     moveItems(amountHDMI, relayHDMI);
     amountHDMI=0;
 
+    blinkLed(ledVerde);
+    blinkLed(ledRojo);
+
       //DEVOLUCION
-  }else if(!qrCode.isEmpty() && qrCode.indexOf("Devo") != -1){
+  }else if(!qrCode.isEmpty() && qrCode.indexOf("Dev") != -1){
+    blinkLed(ledVerde);
     Serial.println("Se está realizando una devolución");
-    amountExtension = extractValue(qrCode, "Ext").toInt();
-    amountEthernet = extractValue(qrCode, "Eth").toInt();
-    amountAdaptador = extractValue(qrCode, "Adpr").toInt();
-    amountHDMI = extractValue(qrCode, "HDMI").toInt();
+    amountExtension = extractValue(qrCode, "Ex").toInt();
+    amountEthernet = extractValue(qrCode, "Et").toInt();
+    amountAdaptador = extractValue(qrCode, "Ad").toInt();
+    amountHDMI = extractValue(qrCode, "HD").toInt();
 
     /*if(amountExtension != 0){
       while(i < amountExtension){
@@ -206,34 +220,26 @@ void processQRCode(String qrCode){
       i = 0;
       amountExtension = 0;
       Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountExtension: " + String(amountExtension));
-    }
-
-    if(amountEthernet != 0){
-      while(i < amountEthernet){
-        Serial.println("Coloca el item, se enciende led para indicar");
-        irValue = digitalRead(irExtension);
-        delay(3000);
-        if(irValue == LOW){
-          Serial.println("Se devolvió el item");
-          Serial.println(i);
-          digitalWrite(relayEthernet, LOW);
-          delay(2000);
-          digitalWrite(relayEthernet, HIGH);
-          i++;
-        }else{
-          Serial.println("No se devolvió nada, intentalo de nuevo");
-        }
-      }
-      i = 0;
-      amountEthernet = 0;
-      Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amountEthernet: " + String(amountEthernet));
     }*/
+    returnItems(amountExtension, relayExtension, irExtension);
+    amountExtension = 0;
+    returnItems(amountEthernet, relayEthernet, irEthernet);
+    amountEthernet = 0;
+    returnItems(amountAdaptador, relayAdaptador,irAdaptador);
+    amountAdaptador = 0;
+    returnItems(amountHDMI, relayHDMI, irHDMI);
+    amountHDMI = 0;
+
+    blinkLed(ledVerde);
+    blinkLed(ledRojo);
+
   //fin devolucion
   }else{
     Serial.println("QR invalido");
   }//fin if general
 }//fin process qr
 
+//PARA PRESTAMO
 void moveItems(int amount, byte relay) {
     int i = 0;
     if (amount != 0 && i == 0){
@@ -254,6 +260,37 @@ void moveItems(int amount, byte relay) {
         amount = 0;
         i=0;
     }
+}//fin moveitems
+
+//PARA DEVOLUCION
+void returnItems(int amount, byte relay, byte irSensor) {
+    int i = 0;
+    if(amount != 0){
+        while(i < amount){
+            Serial.println("Coloca el item, se enciende led para indicar");
+            int irValue = digitalRead(irSensor);
+            delay(3000);
+            if(irValue == LOW){
+                Serial.println("Se devolvió el item");
+                Serial.println(i);
+                digitalWrite(relay, LOW);
+                delay(3000);
+                digitalWrite(relay, HIGH);
+                i++;
+            }else{
+                Serial.println("No se devolvió nada, intentalo de nuevo");
+            }
+        }
+        i = 0;
+        amount = 0;
+        Serial.println("Se devolvió todo: " + String("i: ") + String(i) + " amount: " + String(amount));
+    }
+}//Fin return items
+
+void blinkLed(byte led){
+  digitalWrite(led, HIGH);
+  delay(500);
+  digitalWrite(led, LOW);
 }
 
 
