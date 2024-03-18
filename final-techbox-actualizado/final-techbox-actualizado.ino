@@ -265,7 +265,7 @@ void moveItems(int amount, byte relay, String userId, String orderId, String mat
             digitalWrite(relay, HIGH);
         }
         Serial.println("Todos los items fueron entregados con éxito");
-        sendDataToFirebase(orderId, userId, "En uso, se escaneó el QR");
+        sendDataToFirebase(orderId, userId, "En uso");
         updateMaterialCount(materialId, amount, "subtract");
         amount = 0;
         i=0;
