@@ -283,9 +283,9 @@ void returnItems(int amount, byte relay, byte irSensor, String userId, String or
             if(irValue == LOW){
                 Serial.println("Se devolvió el item");
                 Serial.println(i);
-                digitalWrite(relay, LOW);
-                delay(3000);
-                digitalWrite(relay, HIGH);
+                //digitalWrite(relay, LOW);
+                //delay(3000);
+                //digitalWrite(relay, HIGH);
                 i++;
             }else{
                 Serial.println("No se devolvió nada, intentalo de nuevo");
