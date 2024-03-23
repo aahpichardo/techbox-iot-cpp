@@ -27,7 +27,7 @@
 <p><a href="https://github.com/aahpichardo">Angel Hernandez<a></p>
 <p><a href="https://github.com/julioerives">Julio Erives<a></p> 
 <p><a href="https://github.com/Hgdv11">Hugo Chaparro<a></p>
-<p>-</p>
+<p><a href="https://github.com/SantiagerArmendariz">Santiago Armendariz<a></p>
 
-<p><a href="https://github.com/julioerives/" target="_blank">Click here to see the Website repository</a><p>
+<p><a href="https://github.com/julioerives/techBox" target="_blank">Click here to see the Website repository</a><p>
 <p><a href="https://github.com/Hgdv11/TechBox" target="_blank">Click here to see the Mobile App repository</a><p>
