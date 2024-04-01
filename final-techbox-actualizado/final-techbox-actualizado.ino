@@ -14,8 +14,8 @@ const byte relayHDMI = 33; //IN4
 //Pines sensores infrarrojo (5v)
 const byte irExtension = 15; //no funciona el 12
 const byte irEthernet = 35;
-const byte irAdaptador = 34;
-const byte irHDMI = 14;
+const byte irAdaptador = 14;
+const byte irHDMI = 34;
 const byte irEngine = 32;
 
 //Pines LEDS (3.3v)
@@ -252,17 +252,18 @@ void moveItems(int amount, byte relay, String userId, String orderId, String mat
     int i = 0;
     if (amount != 0 && i == 0){
         while(i < amount){
+            digitalWrite(relay, LOW); // Activar el relay
+            delay(1000);
             irValue = digitalRead(irEngine);
-            delay(500);
-            while(irValue != LOW && i != amount){
-                Serial.println("Veces que se ha encendido el relay: ");
-                Serial.println(i);
-                digitalWrite(relay, LOW);
-                delay(3000);
-                i++;
-                irValue = digitalRead(irEngine);
+            while(irValue != LOW){
+                irValue = digitalRead(irEngine); // Leer el valor de irEngine
             }
+            // Cuando irValue es LOW, incrementar i y desactivar el relay
+            i++;
             digitalWrite(relay, HIGH);
+            Serial.println("Veces que se ha encendido el relay: ");
+            Serial.println(i);
+            delay(500);
         }
         Serial.println("Todos los items fueron entregados con éxito");
         sendDataToFirebase(orderId, userId, "En uso");
@@ -279,7 +280,7 @@ void returnItems(int amount, byte relay, byte irSensor, String userId, String or
         while(i < amount){
             Serial.println("Coloca el item, se enciende led para indicar");
             int irValue = digitalRead(irSensor);
-            delay(3000);
+            delay(500);
             if(irValue == LOW){
                 Serial.println("Se devolvió el item");
                 Serial.println(i);
